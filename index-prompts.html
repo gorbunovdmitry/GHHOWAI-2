@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИИ-ассистент Альфа-Банка с системными промптами</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Стили -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="prompt-selector.css">
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_MEASUREMENT_ID');
+    </script>
+    
+    <!-- Yandex.Metrika -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+        ym(12345678, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true
+        });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/12345678" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    
+    <style>
+        /* Дополнительные стили для интеграции с системой промптов */
+        .app {
+            padding-top: 80px; /* Место для селектора промптов */
+        }
+        
+        .prompt-selector {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 1000;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .keyboard-open .prompt-selector {
+            display: none; /* Скрываем при открытой клавиатуре на мобильных */
+        }
+        
+        .message.welcome-message {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #EF3124;
+            margin-bottom: 16px;
+        }
+        
+        .message.welcome-message .message-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 8px 0;
+            font-size: 14px;
+            color: #666;
+            max-width: 200px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #EF3124;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        .typing-dot:nth-child(3) { animation-delay: 0s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Стили для модальных окон */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .stats-modal, .history-modal {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stats-header, .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+        }
+        
+        .stats-header h3, .history-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #222;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background: #e0e0e0;
+            color: #222;
+        }
+        
+        .stats-content, .history-content {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .current-prompt {
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #EF3124;
+        }
+        
+        .current-prompt h4 {
+            margin: 0 0 8px 0;
+            color: #222;
+        }
+        
+        .current-prompt p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .metric-item {
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background: #fff;
+        }
+        
+        .metric-item h5 {
+            margin: 0 0 8px 0;
+            color: #222;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .metric-details span {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .time {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .change {
+            font-size: 13px;
+            color: #222;
+            font-weight: 500;
+        }
+        
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .app {
+                padding-top: 120px; /* Больше места для селектора на мобильных */
+            }
+            
+            .prompt-selector {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                max-width: none;
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .keyboard-open .app {
+                padding-top: 0; /* Убираем отступ при открытой клавиатуре */
+            }
+            
+            .stats-modal, .history-modal {
+                width: 95%;
+                margin: 20px;
+            }
+            
+            .metric-details {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Селектор промптов будет добавлен через JavaScript -->
+        
+        <!-- Основной чат -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Сообщения будут добавлены через JavaScript -->
+            </div>
+            
+            <!-- Поле ввода -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Введите ваш вопрос..."
+                        rows="1"
+                        maxlength="1000"
+                    ></textarea>
+                    <button id="sendButton" class="send-button" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-footer">
+                    <span class="char-count">
+                        <span id="charCount">0</span>/1000
+                    </span>
+                    <span class="message-count">
+                        Сообщений: <span id="messageCount">0</span>/50
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Страница лимита -->
+        <div class="limit-page" id="limitPage">
+            <div class="limit-content">
+                <div class="limit-icon">⚠️</div>
+                <h2>Достигнут лимит сообщений</h2>
+                <p>Вы использовали максимальное количество сообщений в этой сессии.</p>
+                <p>Обновите страницу для начала новой сессии.</p>
+                <button onclick="location.reload()" class="refresh-button">
+                    Обновить страницу
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Подключение скриптов -->
+    <script src="components/PromptSelector.js"></script>
+    <script src="script-prompts.js"></script>
+    
+    <script>
+        // Обновление счетчика символов
+        const messageInput = document.getElementById('messageInput');
+        const charCount = document.getElementById('charCount');
+        const messageCount = document.getElementById('messageCount');
+        
+        messageInput.addEventListener('input', function() {
+            const length = this.value.length;
+            charCount.textContent = length;
+            
+            // Изменение цвета при приближении к лимиту
+            if (length > 800) {
+                charCount.style.color = '#f44336';
+            } else if (length > 600) {
+                charCount.style.color = '#ff9800';
+            } else {
+                charCount.style.color = '#666';
+            }
+        });
+        
+        // Обновление счетчика сообщений
+        function updateMessageCount(count) {
+            messageCount.textContent = count;
+            
+            // Изменение цвета при приближении к лимиту
+            if (count > 40) {
+                messageCount.style.color = '#f44336';
+            } else if (count > 30) {
+                messageCount.style.color = '#ff9800';
+            } else {
+                messageCount.style.color = '#666';
+            }
+        }
+        
+        // Переопределяем функцию addMessage для обновления счетчиков
+        const originalAddMessage = window.addMessage;
+        if (originalAddMessage) {
+            window.addMessage = function(type, text, className = '') {
+                originalAddMessage(type, text, className);
+                
+                // Обновляем счетчик сообщений только для пользователя
+                if (type === 'user') {
+                    const currentCount = parseInt(messageCount.textContent) + 1;
+                    updateMessageCount(currentCount);
+                }
+            };
+        }
+    </script>
+</body>
+</html>

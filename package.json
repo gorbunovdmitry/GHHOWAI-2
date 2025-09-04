@@ -1,0 +1,23 @@
+{
+  "name": "ghhowai-chat-app",
+  "version": "1.0.0",
+  "description": "AI Chat Application with Prompt Management System",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "chat",
+    "ai",
+    "gemini",
+    "prompts",
+    "alfa-bank"
+  ],
+  "author": "Alfa-Bank AI Assistant",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

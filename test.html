@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест ИИ-ассистента</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .test-button {
+            background: #EF3124;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 2px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .test-button:hover {
+            background: #d6281a;
+        }
+        
+        .test-input {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Область чата -->
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Сообщения будут добавляться динамически -->
+            </div>
+        </div>
+
+        <!-- Панель ввода -->
+        <div class="input-panel">
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Введите сообщение..." 
+                    autocomplete="off"
+                    maxlength="1000"
+                >
+                <button id="sendButton" class="send-button" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель тестирования -->
+    <div class="test-panel">
+        <h4>🧪 Панель тестирования</h4>
+        
+        <button class="test-button" onclick="testWelcome()">Приветствие</button>
+        <button class="test-button" onclick="testCashback()">Кэшбэк</button>
+        <button class="test-button" onclick="testPoints()">Баллы</button>
+        <button class="test-button" onclick="testPartners()">Партнеры</button>
+        <button class="test-button" onclick="testFormatting()">Форматирование</button>
+        <button class="test-button" onclick="testLongMessage()">Длинное сообщение</button>
+        <button class="test-button" onclick="testLimit()">Тест лимита</button>
+        <button class="test-button" onclick="clearChat()">Очистить чат</button>
+        
+        <input type="text" class="test-input" id="customMessage" placeholder="Кастомное сообщение">
+        <button class="test-button" onclick="sendCustomMessage()">Отправить</button>
+        
+        <div style="margin-top: 10px; font-size: 11px; color: #666;">
+            Сообщений: <span id="messageCount">0</span><br>
+            Лимит: <span id="limitStatus">Не достигнут</span>
+        </div>
+    </div>
+
+    <!-- Страница лимита -->
+    <div class="limit-page" id="limitPage" style="display: none;">
+        <div class="limit-content">
+            <div class="limit-emoji">🚀</div>
+            <h1 class="limit-title">Ещё чуть-чуть</h1>
+            <p class="limit-description">
+                Вы достигли лимита сообщений в этой сессии. 
+                Пожалуйста, обновите страницу для продолжения общения с ИИ-ассистентом.
+            </p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Тестовые функции
+        function testWelcome() {
+            sendTestMessage("Привет! Расскажи о системе лояльности");
+        }
+        
+        function testCashback() {
+            sendTestMessage("Как работает кэшбэк?");
+        }
+        
+        function testPoints() {
+            sendTestMessage("Сколько баллов я могу накопить?");
+        }
+        
+        function testPartners() {
+            sendTestMessage("Какие партнеры участвуют в программе?");
+        }
+        
+        function testFormatting() {
+            sendTestMessage("**Жирный текст** и *курсив* и список:\n- Пункт 1\n- Пункт 2");
+        }
+        
+        function testLongMessage() {
+            const longMessage = "Это очень длинное сообщение ".repeat(50);
+            sendTestMessage(longMessage);
+        }
+        
+        function testLimit() {
+            // Отправляем много сообщений для тестирования лимита
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    sendTestMessage(`Тестовое сообщение ${i + 1}`);
+                }, i * 100);
+            }
+        }
+        
+        function sendCustomMessage() {
+            const message = document.getElementById('customMessage').value;
+            if (message.trim()) {
+                sendTestMessage(message);
+                document.getElementById('customMessage').value = '';
+            }
+        }
+        
+        function sendTestMessage(text) {
+            messageInput.value = text;
+            messageInput.dispatchEvent(new Event('input'));
+            sendMessage();
+        }
+        
+        function clearChat() {
+            chatMessages.innerHTML = '';
+            messageCount = 0;
+            isLimitReached = false;
+            limitPage.style.display = 'none';
+            document.querySelector('.app').style.display = 'flex';
+            updateTestPanel();
+        }
+        
+        function updateTestPanel() {
+            document.getElementById('messageCount').textContent = messageCount;
+            document.getElementById('limitStatus').textContent = isLimitReached ? 'Достигнут' : 'Не достигнут';
+        }
+        
+        // Перехватываем функции для обновления панели тестирования
+        const originalAddMessage = addMessage;
+        addMessage = function(type, text) {
+            originalAddMessage(type, text);
+            if (type === 'user') {
+                messageCount++;
+                updateTestPanel();
+            }
+        };
+        
+        const originalShowLimitPage = showLimitPage;
+        showLimitPage = function() {
+            originalShowLimitPage();
+            updateTestPanel();
+        };
+        
+        // Инициализация тестовой панели
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTestPanel();
+        });
+    </script>
+</body>
+</html>

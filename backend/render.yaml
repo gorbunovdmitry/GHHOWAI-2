@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ghhowai-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: GEMINI_API_KEY
+        value: YOUR_GEMINI_API_KEY_HERE
+      - key: GOOGLE_SHEET_ID
+        value: YOUR_GOOGLE_SHEET_ID_HERE
+      - key: GOOGLE_CREDENTIALS_JSON
+        value: YOUR_GOOGLE_CREDENTIALS_JSON_HERE
+      - key: CORS_ORIGIN
+        value: '*'
+      - key: LOG_LEVEL
+        value: info
